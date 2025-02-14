@@ -6,6 +6,16 @@
 
 import re
 
+# Globals. This dictionary lemmatizes a very few functional adpositions
+# in French.
+ADPS_FR = [
+    ('à', r'[aà][uls]?[sx]?|ad'),
+    ('de', r"d[eu']|del?s?|dou"),
+    ('en', r"[ea][nm]|el|es|o?u"),
+    ('par', r'p[ae]r'),
+    ('pour', r'p(o|u|ou)r')
+]
+
 def script(an, lang='french'):
     
     ##################################################################
@@ -89,6 +99,10 @@ def script(an, lang='french'):
         nonlocal T, head
         if not is_dephead(tok): return False
         if not tok.tags['DEPREL'] == 'parataxis': return False
+        # If we're analysing the parenthetical clause itself and the
+        # head is not T, the lexical head could be in the prefield and
+        # tagged as parataxis. We don't want to exclude this.
+        if is head: return False
         return True
         
     def is_vocative(tok):
@@ -164,6 +178,74 @@ def script(an, lang='french'):
             else:
                 return False
         return False # we shouldn't get here but just in case.
+        
+    # Tagging functions (language-dependent)
+    # --------------------------------------
+    
+    def tag_form(tok):
+        if lang == 'french': return _tag_form_fr(tok)
+        # Else not implemented
+        return ''
+        
+    def _tag_form_fr(tok):
+        children = an.get_children(tok)
+        P = _tag_p_form_fr(children)
+        tag = ''
+        # Special forms
+        # SI
+        if tok.tags['UPOS'] == 'ADV' and \
+        re.fullmatch(r"s[ie'][ls]?", str(tok).lower()): 
+            tag = 'ADVP:si'
+        # Personal pronoun (nominative)
+        elif tok.tags['UPOS'] == 'PRON' and \
+        re.fullmatch(r"[gj][eo']u?[ls]?|gié|tu|[iy]l[sz]?|ell?e?[sz]?|n[ou]u?[sz]|v[ou]u?][sz]", str(tok).lower()):
+            tag = 'NP:PRON:Prs:Nom'
+        # Demonstrative pronoun CE (we might at some point want to separate "ce" and "pour ce"
+        elif tok.tags['UPOS'] == 'PRON' and re.fullmatch(r"[cç][eo']u?", str(tok).lower()):
+            tag = 'NP:PRON:Dem:ce'
+        # Other demonstrative pronoun
+        elif tok.tags['UPOS'] == 'PRON' and re.fullmatch(r"[iy]?c[ie](ll?|s|z|st|ste[sz])", str(tok).lower()):
+            tag = 'NP:PRON:Dem'
+        # Other pronoun of any description
+        elif tok.tags['UPOS'] == 'PRON':
+            tag = 'NP:PRON'
+        # Lexical classes
+        # Nouns
+        elif tok.tags['UPOS'] in ['NOUN', 'PROPN']:
+            tag = 'NP'
+        # Finite verbs
+        elif tok.tags['UPOS'] == 'VERB' and tok.tags['FEATS'].find('VerbForm=Fin') > -1:
+            tag = 'TP'
+        # Non-finite verbs, tag as VP for the moment
+        elif tok.tags['UPOS'] == 'VERB':
+            tag = 'VP'
+        # Adjectives
+        elif tok.tags['UPOS'] == 'ADJ':
+            tag = 'AP'
+        # Adverbs
+        elif tok.tags['UPOS'] == 'ADV':
+            tag = 'ADVP'
+        else:
+            tag = 'XX'
+        # Retag PPs
+        if P == 'P':
+            tag = f'PP[{tag}]'
+        elif P:
+            tag = f'PP:{P}[{tag}]'
+
+        return tag
+            
+    def _tag_p_form_fr(toks):
+        for tok in toks:
+            if tok.tags['UPOS'] != 'ADP' or tok.tags['DEPREL'] != 'case': continue # ignore if not an ADP
+            for tag, regex in ADPS_FR:
+                if re.fullmatch(regex, str(tok).lower()): return tag
+            return 'P'
+        return ''
+
+        
+        
+        
      
     ##################################################################
     # SCRIPT
@@ -171,7 +253,10 @@ def script(an, lang='french'):
     
     ##################################################################
     # Locators
-    # Identify some key nodes.
+    # --------
+    # Identify key nodes, splitting up countable and non-countable
+    # nodes. Goal is to come up with a list of COUNTABLE HEADS (i.e.
+    # the prefield constituents that we want to count)
     ##################################################################
     
     an.reset_ids() # Resets the conll IDs in the hit, first step.
@@ -229,9 +314,38 @@ def script(an, lang='french'):
             l.append(False)
     prefield_countable_head_status = l
     
-    # Next stage: Tag the countable heads as a basis for the WO analysis.
+    ###################################################################
+    # Correctors
+    # ----------
+    # In this section the script checks the countable heads to correct
+    # anything about the analysis that it doesn't agree with.
+    # Modified the underlying Conllu structure.
+    ###################################################################
     
+    ###################################################################
+    # Taggers
+    # -------
+    # In this section the countable heads are analysed and tagged.
+    ###################################################################
     
+    # Set up dictionary entries
+    for i in range(1, 5):
+        key = 'T-' + str(i)
+        hit.tags[key + '_form'] = ''
+    
+    i = 0
+    for head_status, tok in reversed(list(zip(
+        prefield_countable_head_status,
+        prefield
+    ))):
+        # Skip non heads in the prefield.
+        if not head_status: continue
+        i += 1 # increment counter
+        if i > 4: continue # only do four of these
+        key = 'T-' + str(i)
+        hit.tags[key + '_form'] = tag_form(tok)
+        #hit.tags[key + '_func'] = tag_func(tok)
+        
     # Test code to test subroutines
     l = []
     for status, tok in zip(prefield_clitic_status, prefield):
