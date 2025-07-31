@@ -3,6 +3,20 @@
 import re
 from lgerm.lgerm import LgermFilterer
 
+class Error(Exception):
+    """
+    Parent class for errors defined in this module.
+    """
+    pass
+
+class AnnotationError(Error):
+    """
+    Raised where part of the annotation script fails.
+    Default behaviour is to print the message but move on to the next 
+    hit.
+    """
+    pass
+
 class Annotator():
     """
     Base class used to add annotation to a hit. The class method "script",
@@ -72,6 +86,7 @@ class Annotator():
         
     def __init__(self):
         self.kwargs = {}
+        self.exception = AnnotationError
     
     def annotate(self, cnc):
         """
@@ -102,7 +117,10 @@ class Annotator():
                 The Hit to be annotated.
         """
         self.hit = hit
-        self.script(**self.kwargs)
+        try:
+            self.script(**self.kwargs)
+        except AnnotationError as e:
+            print(f'WARNING: Hit {hit.uuid} cannot be annotated. Reason: {str(e)}.')
         return self.hit
         
     def script(self, **kwargs):
@@ -209,9 +227,9 @@ class ConllAnnotator(Annotator):
                 if int(tok.tags[self.HEAD]) == int(parent.tags[self.ID]):
                     l.append(tok)
             except:
-                print(self.hit)
-                print(tok)
-                print(tok.tags)
+                #print(self.hit)
+                #print(tok)
+                #print(tok.tags)
                 raise
         return l
         
