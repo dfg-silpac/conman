@@ -335,8 +335,12 @@ class TableExporter(Exporter):
         # Default name plus all tags in self.tags
         self.fields = ['UUID', 'REF', 'LCX', 'KEYWORDS', 'RCX']
         if not cnc: return # don't look for cnc[0] if the concordance is empty
-        for key in cnc[0].tags:
-            self.fields.append(key)
+        l = list(cnc[0].tags.keys())
+        for hit in cnc:
+            extra = list(set(list(hit.tags.keys())) - set(l))
+            l.extend(extra)
+        for key in l:
+            if not key in self.fields: self.fields.append(key)
         
     def _export(self, cnc, path):
         """
