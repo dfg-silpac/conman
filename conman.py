@@ -115,8 +115,9 @@ class Launcher():
                     obj = Importer.create(value)
                 setattr(self, key, obj)
         # 1b. If there's an annotator script on the command line,
-        # create an annotator too.
-        if self.annotator_script:
+        # create a default annotator too, unless one has already been
+        # created by the workflow file.
+        if self.annotator_script and not self.annotator:
             self.annotator = Annotator.create('Annotator')
         # 2. Read importer and other_importer sections
         for section, importer in [
@@ -305,8 +306,8 @@ class Launcher():
             self._initialize_from_workflow()
         else:
             self._initialize_from_path()
-        if annotator_script:
-            self.annotator
+        #if annotator_script:
+        #    self.annotator
         # 2. Importing
         print('Loading/importing concordance...')
         if not self.cnc:

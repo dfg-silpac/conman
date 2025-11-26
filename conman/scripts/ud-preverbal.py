@@ -102,7 +102,7 @@ def script(an, lang='french'):
         # If we're analysing the parenthetical clause itself and the
         # head is not T, the lexical head could be in the prefield and
         # tagged as parataxis. We don't want to exclude this.
-        if is head: return False
+        if tok is head: return False
         return True
         
     def is_vocative(tok):
