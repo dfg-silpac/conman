@@ -274,7 +274,7 @@ class ConllAnnotator(Annotator):
         l = list(filter(lambda x: int(x.tags.get(self.ID, '0')) == head_id, self.hit))
         if not l: return None
         return l[0]
-    
+        
     def get_string(self, parent):
         """
         Returns the parent and all dominated nodes as a string.
@@ -288,11 +288,28 @@ class ConllAnnotator(Annotator):
                 A string representing the tokens in the subtree
                 depending on parent.
         """
+        l = self.get_tok_and_descendents(parent)
+        return ' '.join([x.form for x in l])
+        
+    def get_tok_and_descendents(self, parent):
+        """
+        Returns the token and all the nodes it dominates as a node
+        list in text order.
+        
+        Parameters:
+            parent (conman.concordance.Token)
+                The token for which descendents should be found.
+                
+        Returns:
+            self.get_tok_and_descendents(parent)
+                A node list representing the tokens in the subtree
+                depending on parent.
+        """
         tree = self.get_descendents(parent)
         tree.append(parent)
         tree.sort(key=lambda x: int(x.tags[self.ID]))
-        return ' '.join([x.form for x in tree])
-        
+        return tree
+                
     def reset_ids(self):
         """
         Resets the conll_IDs in the hit, since they may have been
