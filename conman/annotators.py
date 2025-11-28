@@ -309,6 +309,26 @@ class ConllAnnotator(Annotator):
         tree.append(parent)
         tree.sort(key=lambda x: int(x.tags[self.ID]))
         return tree
+        
+    def is_ancestor(self, tok1, tok2):
+        """
+        Returns TRUE if tok1 is an ancestor of tok2.
+        
+        Parameters:
+            tok1 (conman.concordance.Token)
+                The token which might be an ancestor.
+            tok2 (conman.concordance.Token)
+                The token which might be a child.
+                
+        Returns:
+            self.is_ancestor(tok1, tok2)
+                Boolean.
+        """
+        parent = self.get_parent(tok2)
+        while parent:
+            if parent is tok1: return True
+            parent = self.get_parent(parent)
+        return False
                 
     def reset_ids(self):
         """
