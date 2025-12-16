@@ -259,6 +259,19 @@ class Launcher():
                     self.merger.hit_end_token = value
                 value = self.workflow.get('merger', 'TM_core_cx', fallback='')
                 self.merger.core_cx = True if value.lower() == 'true' else False
+                # TM_cnc_tok_fmt and TM_other_cnc_tok_fmt
+                value = self.workflow.get('merger', 'TM_cnc_tok_fmt', fallback='')
+                # Check if valid format string
+                if value and value[0] == '{' and value[-1] == '}' and '0' in value:
+                    self.merger.cnc_tok_fmt = value
+                else:
+                    raise ConfigError('TM_cnc_tok_fmt is not a valid Python format string.')
+                value = self.workflow.get('merger', 'TM_other_cnc_tok_fmt', fallback='')
+                # Check if valid format string
+                if value and value[0] == '{' and value[-1] == '}' and '0' in value:
+                    self.merger.other_cnc_tok_fmt = value
+                else:
+                    raise ConfigError('TM_other_cnc_tok_fmt is not a valid Python format string.')
         # 5. Manage annotator settings (i.e. changing the script)
         if self.annotator:
             for key in self.workflow.options('annotator'):

@@ -68,6 +68,14 @@ class TextMerger(Merger):
         Concordance to merge into
     other_cnc (concordance.Concordance):
         Concordance to merge from.
+    cnc_tok_fmt (string):
+        A Python format string instructing the merger how to turn 
+        tokens in the main concordance into string representations.
+        Default is the form attribute, i.e. '{0.form}'
+    other_cnc_tok_fmt (string):
+        A Python format string instructing the merger how to turn 
+        tokens in the other concordance into string representations.
+        Default is the form attribute, i.e. '{0.form}'
     threshold (int):
         The threshold to pass to the aligner. Default is 20 (aligner default).
     ratio (float):
@@ -95,15 +103,17 @@ class TextMerger(Merger):
         self.cnc, self.other_cnc = None, None
         self.threshold, self.ratio = 20, .95
         self.hit_end_token = ''
+        self.cnc_tok_fmt, self.other_cnc_tok_fmt = '{0.form}', '{0.form}'
         self._cnc_map, self._other_cnc_map = [], []
         self._cnc_list, self._other_cnc_list = [], []
         
     def _build_maps(self, cnc_chunk, other_cnc_chunk):
         # Builds (other_)cnc_map and (other_)cnc_list objects
         # First, reset the maps, in case we're calling this multiple times
-        # - _list attributes are (ix, token) tuples, where ix is the 
+        # - _list attributes are (ix, string) tuples, where ix is the 
         #         cumulative index of the token in the chunk, ignoring
-        #         hit boundaries.
+        #         hit boundaries, and string is some string form of
+        #         each concordance token.
         # - _map attributes are (hit_ix, tok_ix) tuples for every token
         #         in the chunk. The index of the tuple in _map corresponds
         #         to the "a_id" attribute that the aligner uses and to
@@ -113,9 +123,9 @@ class TextMerger(Merger):
         # Now, turn the concordance into a list of tokens, sensitive to 
         # core_cx setting. Note that for other_cnc, core_cx is always False,
         # the idea being of course that it contains only toks in the core_cx.
-        for cnc, l, mp, core_cx in [
-            (cnc_chunk, self._cnc_list, self._cnc_map, self.core_cx),
-            (other_cnc_chunk, self._other_cnc_list, self._other_cnc_map, False)
+        for cnc, l, mp, tok_fmt, core_cx in [
+            (cnc_chunk, self._cnc_list, self._cnc_map, self.cnc_tok_fmt, self.core_cx),
+            (other_cnc_chunk, self._other_cnc_list, self._other_cnc_map, self.other_cnc_tok_fmt, False)
         ]:
             # k keeps a running tally of the total number of tokens
             # in previous hits in the concordance if chunk contains
@@ -133,12 +143,15 @@ class TextMerger(Merger):
                 while toks:
                     # Pop the first token.
                     tok = toks.pop(0)
-                    # Create l_item
-                    l_item = (i + k + offset, tok.form)
+                    # Create l_item.
+                    l_item = (i + k + offset, tok_fmt.format(tok))
                     # Increment i
                     i += 1
-                    # If l_item has a form, add it to the list
-                    if tok.form:
+                    # If l_item isn't an empty string, add it to the list
+                    # It can be an empty string if we're using the .form
+                    # property and this is the second token contained
+                    # by the same metatoken
+                    if l_item[1]:
                         l.append(l_item)
                     else: # Forget about it
                         pass
