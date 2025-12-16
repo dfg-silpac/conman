@@ -248,9 +248,11 @@ class MidiaTokenizer(Tokenizer):
     
     def tokenize(self, s):
         """
-        Tokenizes s, returning a list of tokens. Identical to
-        original tokenizer but treats the midpoint (·) as a token
-        boundary.
+        Tokenizes s, returning a list of tokens. 
+        More or less identical to the original tokenizer but:
+        - treats the midpoint (·) as a token boundary.
+        - removes the space preceding all apostrophes surrounded by
+        spaces on both sides.
     
         Parameters:
             s (str) : String containing tokens
@@ -259,8 +261,21 @@ class MidiaTokenizer(Tokenizer):
             tokenize(self, s):
               A list of tokens
         """
-        # 
+        # Apostrophe fix
+        # All apostrophes which are SPLIT across two tokens should
+        # be joined.
+        # "de' '" and "ne' '" are transformed into "de'" and "ne'".
+        # These forms sometimes confuse the MIDIA 1 parser, but then
+        # again, a lot confuses the MIDIA 1 parser, and this is not
+        # a problem that the tokenizer should be solving in any case.
+        s = re.sub(r" ' ", "' ", s) # before space
+        s = re.sub(r" '$", "'", s) # end of string
+        s = re.sub(r"(?<=[DNdn]e)'' ", "' ", s) # before space
+        s = re.sub(r"(?<=[DNdn]e)''$", "'", s) # end of string
+        # Now split by whitespace.
         return re.split(r'[\s·]+', s)
+
+        
     
 
         
