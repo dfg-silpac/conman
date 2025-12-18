@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import re
+import csv, re
 from lgerm.lgerm import LgermFilterer
 
 class Error(Exception):
@@ -78,7 +78,8 @@ class Annotator():
           'EvaluationAnnotator': EvaluationAnnotator,
           'KeywordTagAnnotator': KeywordTagAnnotator,
           'LgermFilterAnnotator': LgermFilterAnnotator,
-          'PennAnnotator': PennAnnotator
+          'PennAnnotator': PennAnnotator,
+          'StandardizingAnnotator': StandardizingAnnotator,
         }
         if annotator_type not in ANNOTATOR_TYPE_TO_CLASS_MAP:
               raise ValueError('Bad annotator type {}'.format(annotator_type))
@@ -569,3 +570,25 @@ class PennAnnotator(Annotator):
         # 7. Create ip_id tag to uniquely identify the IP containing
         # the hit. For compatibility with AS's coding tables.
         hit.tags['ip_id'] = self.get_ip_id(kws[0])
+
+class StandardizingAnnotator(Annotator):
+    """
+    Annotator designed to create a 'standard' entry in the .tags
+    dictionary of each token in the hit, modifying the .form attribute
+    of each token according to a series of regexes which are applied
+    in order. The regexes are stored in the 'pattern_repls' variable;
+    a list of (pattern, repl) tuples that are processed in order by
+    re.sub.
+    """
+    
+    def script(self, pattern_repls):
+        # 1. Iterate over all the tokens in the hit
+        for tok in self.hit:
+            # 2. Set the string to tok.form
+            s = tok.form
+            # 3. Iterate over all the rules in pattern_repls
+            for pattern, repl in pattern_repls:
+                # 4. Apply re.sub to string
+                s = re.sub(pattern, repl, s)
+            # 5. Set the standardized string to be tok.tags.standard
+            tok.tags['standard'] = s
