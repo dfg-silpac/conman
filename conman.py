@@ -264,13 +264,13 @@ class Launcher():
                 # Check if valid format string
                 if value and value[0] == '{' and value[-1] == '}' and '0' in value:
                     self.merger.cnc_tok_fmt = value
-                else:
+                elif value:
                     raise ConfigError('TM_cnc_tok_fmt is not a valid Python format string.')
                 value = self.workflow.get('merger', 'TM_other_cnc_tok_fmt', fallback='')
                 # Check if valid format string
                 if value and value[0] == '{' and value[-1] == '}' and '0' in value:
                     self.merger.other_cnc_tok_fmt = value
-                else:
+                elif value:
                     raise ConfigError('TM_other_cnc_tok_fmt is not a valid Python format string.')
         # 5. Manage annotator settings (i.e. changing the script)
         if self.annotator:
