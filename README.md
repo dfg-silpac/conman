@@ -931,6 +931,9 @@ tags=[('conll_DEPREL', 'deprel'), ('conll_HEAD', 'head')]
 
 ## Version history
 
++ November 2026: version 1.3.0 (updates made December 2025)
+    + added a `StandardizingAnnotator` to apply regex-based standardization
+    to each token while retaining the original form of the token as a tag.
 + January 2025: version 1.2
     + added `refandtext` method to Merger
     + enabled annotator scripts to be passed on the command line
