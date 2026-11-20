@@ -931,7 +931,9 @@ tags=[('conll_DEPREL', 'deprel'), ('conll_HEAD', 'head')]
 
 ## Version history
 
-+ November 2026: version 1.3.0 (updates made December 2025)
++ November 2026: version 1.3.0 (updates made in 2025)
+    + added a `MidiaTokenizer` for data from the MIDIA corpus.
+    + added a `ConlluImporter` with more logical tag names
     + added a `StandardizingAnnotator` to apply regex-based standardization
     to each token while retaining the original form of the token as a tag.
 + January 2025: version 1.2
