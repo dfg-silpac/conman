@@ -626,11 +626,15 @@ class GrewMatchImporter(Importer):
                 # Continue the loop
                 # KeyError should never be raised
                 continue
+            # Make a result-specific copy of the hit
+            hit = Hit([copy.deepcopy(x) for x in hit_src])
+            hit.tags = hit_src.tags.copy()
+            hit.ref = ref_prefix + hit_src.ref if self.add_ref_prefix else hit_src.ref
             # Iterate over all matched nodes in the query
             for name, strix  in result['matching']['nodes'].items():
                 node_ix = int(strix) - 1
                 try:
-                    hit_src[node_ix].tags['grew_node'] = name
+                    hit[node_ix].tags['grew_node'] = name
                 except IndexError:
                     pass
             # Set kw_ix
@@ -640,10 +644,6 @@ class GrewMatchImporter(Importer):
                 # Can't find the node in this result; could have bee
                 # a weird or badly formed query
                 continue
-            # Rebuild the hit
-            hit = Hit([copy.copy(x) for x in hit_src])
-            hit.tags = hit_src.tags.copy()
-            hit.ref = ref_prefix + hit_src.ref if self.add_ref_prefix else hit_src.ref
             # Parse the ref
             for key, value in self.parse_ref(hit.ref).items():
                 hit.tags[key] = value
